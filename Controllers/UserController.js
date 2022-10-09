@@ -1,5 +1,20 @@
 import UserModel from '../Models/userModel.js';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+
+// Get all Users
+export const getAllUsers = async (req, res) => {
+  try {
+    let users = await UserModel.find();
+    users = users.map((user) => {
+      const { password, ...otherDetails } = user._doc;
+      return otherDetails;
+    });
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
 
 // Get a User
 export const getUser = async (req, res) => {
@@ -21,7 +36,7 @@ export const getUser = async (req, res) => {
 // Update a User
 export const updateUser = async (req, res) => {
   const id = req.params.id;
-  const { currentUserId, currentUserAdminStatus, password } = req.body;
+  const { _id: currentUserId, currentUserAdminStatus, password } = req.body;
 
   if (id === currentUserId || currentUserAdminStatus) {
     try {
@@ -33,7 +48,16 @@ export const updateUser = async (req, res) => {
         new: true,
       });
 
-      res.status(200).json(user);
+      const token = jwt.sign(
+        {
+          username: user.username,
+          id: user._id,
+        },
+        process.env.JWT_KEY,
+        { expiresIn: '1h' }
+      );
+
+      res.status(200).json({ user, token });
     } catch (error) {
       res.status(500).json(error);
     }
@@ -67,7 +91,7 @@ export const deleteUser = async (req, res) => {
 export const followUser = async (req, res) => {
   const id = req.params.id;
 
-  const { currentUserId } = req.body;
+  const { _id: currentUserId } = req.body;
   if (id === currentUserId) {
     res.status(403).json('Action forbidden.');
   } else {
@@ -94,7 +118,7 @@ export const followUser = async (req, res) => {
 export const unfollowUser = async (req, res) => {
   const id = req.params.id;
 
-  const { currentUserId } = req.body;
+  const { _id: currentUserId } = req.body;
   if (id === currentUserId) {
     res.status(403).json('Action forbidden.');
   } else {

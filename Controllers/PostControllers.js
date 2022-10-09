@@ -8,7 +8,7 @@ export const createPost = async (req, res) => {
 
   try {
     await newPost.save();
-    res.status(200).json('Post created.');
+    res.status(200).json(newPost);
   } catch (error) {
     res.status(500).json(error);
   }
@@ -88,7 +88,6 @@ export const likePost = async (req, res) => {
 // Get Timeline Posts
 export const getTimelinePosts = async (req, res) => {
   const userId = req.params.id;
-
   try {
     const currentUserPosts = await PostModel.find({ userId: userId });
     const followingPosts = await UserModel.aggregate([
@@ -117,7 +116,7 @@ export const getTimelinePosts = async (req, res) => {
       currentUserPosts
         .concat(...followingPosts[0].followingPosts)
         .sort((a, b) => {
-          return b.createdAt - a.createdAt;
+          return new Date(b.createdAt) - new Date(a.createdAt);
         })
     );
   } catch (error) {
